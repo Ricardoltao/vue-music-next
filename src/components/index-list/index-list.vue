@@ -1,26 +1,22 @@
 <template>
-  <scroll
-    class="index-list"
-    :probeType="3"
-    @scroll="onScroll"
-    ref="scrollRef"
-  >
+  <scroll class="index-list" :probeType="3" @scroll="onScroll" ref="scrollRef">
     <ul ref="groupRef">
       <li class="group" v-for="group in data" :key="group.title">
         <h2 class="title">{{ group.title }}</h2>
         <ul>
-          <li class="item" v-for="item in group.list" :key="item.id">
+          <li
+            class="item"
+            v-for="item in group.list"
+            :key="item.id"
+            @click="onItemClick(item)"
+          >
             <img v-lazy="item.pic" class="avatar" />
             <span class="name">{{ item.name }}</span>
           </li>
         </ul>
       </li>
     </ul>
-    <div
-      class="fixed"
-      v-show="fixedTitle"
-      :style="fixedStyle"
-    >
+    <div class="fixed" v-show="fixedTitle" :style="fixedStyle">
       <div class="fixed-title">{{ fixedTitle }}</div>
     </div>
     <div
@@ -35,7 +31,7 @@
           v-for="(item, index) in shortcutList"
           :key="item"
           :data-index="index"
-          :class="{'current': currentIndex === index}"
+          :class="{ current: currentIndex === index }"
         >
           {{ item }}
         </li>
@@ -52,6 +48,7 @@ import useShortcut from './use-shortcut'
 export default {
   name: 'index-list',
   components: { Scroll },
+  emits: ['select'],
   props: {
     data: {
       type: Array,
@@ -60,11 +57,22 @@ export default {
       }
     }
   },
-  setup(props) {
-    const { groupRef, onScroll, fixedTitle, fixedStyle, currentIndex } = useFixed(props)
-    const { shortcutList, scrollRef, onShortcutTouchStart, onShortcutTouchMove } = useShortcut(props, groupRef)
+  setup(props, { emit }) {
+    const { groupRef, onScroll, fixedTitle, fixedStyle, currentIndex } =
+      useFixed(props)
+    const {
+      shortcutList,
+      scrollRef,
+      onShortcutTouchStart,
+      onShortcutTouchMove
+    } = useShortcut(props, groupRef)
+
+    function onItemClick(item) {
+      emit('select', item)
+    }
 
     return {
+      onItemClick,
       // fixed
       groupRef,
       onScroll,
