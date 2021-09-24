@@ -5,12 +5,12 @@
     </div>
     <h1 class="title">{{ title }}</h1>
     <div class="bg-image" :style="bgImageStyle" ref="bgImage">
-      <!-- <div class="play-btn-wrapper" :style="playBtnStyle">
-        <div v-show="songs.length > 0" class="play-btn">
+      <div class="play-btn-wrapper" :style="playBtnStyle">
+        <div v-show="songs.length > 0" class="play-btn" @click="random">
           <i class="icon-play"></i>
           <span class="text">随机播放全部</span>
         </div>
-      </div> -->
+      </div>
       <div class="filter" :style="filterStyle"></div>
     </div>
     <scroll
@@ -22,7 +22,7 @@
       @scroll="onScroll"
     >
       <div class="song-list-wrapper">
-        <song-list :songs="songs"></song-list>
+        <song-list :songs="songs" @select="selectItem"></song-list>
       </div>
     </scroll>
   </div>
@@ -31,6 +31,7 @@
 <script>
 import SongList from '@/components/base/song-list/song-list'
 import Scroll from '@/components/base/scroll/scroll.vue'
+import { mapActions } from 'vuex'
 
 const RESERVED_HIGHT = 40
 
@@ -93,6 +94,15 @@ export default {
         transform: `scale(${scale})translateZ(${translateZ}px)`
       }
     },
+    playBtnStyle() {
+      let display = ''
+      if (this.scrollY >= this.maxTranslateY) {
+        display = 'none'
+      }
+      return {
+        display
+      }
+    },
     scrollStyle() {
       return {
         top: `${this.imageHeight}px`
@@ -103,7 +113,9 @@ export default {
       const scrollY = this.scrollY
       const imageHeight = this.imageHeight
       if (scrollY >= 0) {
-        blur = Math.min(this.maxTranslateY / imageHeight, scrollY / imageHeight) * 20
+        blur =
+          Math.min(this.maxTranslateY / imageHeight, scrollY / imageHeight) *
+          20
       }
 
       return {
@@ -117,11 +129,21 @@ export default {
     this.maxTranslateY = this.imageHeight - RESERVED_HIGHT
   },
   methods: {
+    ...mapActions(['selectPlay', 'randomPlay']),
     goBack() {
       this.$router.back()
     },
     onScroll(pos) {
       this.scrollY = -pos.y
+    },
+    selectItem({ song, index }) {
+      this.selectPlay({
+        list: this.songs,
+        index
+      })
+    },
+    random() {
+      this.randomPlay(this.songs)
     }
   }
 }
