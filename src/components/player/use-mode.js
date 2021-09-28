@@ -1,5 +1,5 @@
 import { useStore } from 'vuex'
-import { computed } from '@vue/reactivity'
+import { computed } from 'vue'
 import { PLAY_MODE } from '@/assets/js/constant'
 
 export default function useMode() {
