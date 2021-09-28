@@ -12,6 +12,20 @@
           <h1 class="title">{{ currentSong.name }}</h1>
           <h2 class="subtitle">{{ currentSong.singer }}</h2>
         </div>
+        <div class="middle">
+          <div class="middle-l">
+            <div class="cd-wrapper">
+              <div ref="cdRef" class="cd">
+                <img
+                  ref="cdImageRef"
+                  :src="currentSong.pic"
+                  class="image"
+                  :class="cdCls"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="bottom">
           <div class="progress-wrapper">
             <span class="time time-l">{{ formateTime(currentTime) }}</span>
@@ -65,6 +79,7 @@ import { computed, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import useMode from './use-mode'
 import useFavorite from './use-favorite'
+import useCd from './use-cd'
 import ProgressBar from './progress-bar.vue'
 import { formateTime } from '@/assets/js/util'
 import { PLAY_MODE } from '@/assets/js/constant'
@@ -93,6 +108,7 @@ export default {
     // hooks
     const { modeIcon, changeMode } = useMode()
     const { getFavoriteIcon, toggleFavorite } = useFavorite()
+    const { cdCls, cdRef, cdImageRef } = useCd()
 
     // computed
     const playIcon = computed(() => {
@@ -230,7 +246,8 @@ export default {
     function onProgressChanged(progress) {
       progressChanging = false
       progressChanging = false
-      audioRef.value.currentTime = currentTime.value = currentSong.value.duration * progress
+      audioRef.value.currentTime = currentTime.value =
+        currentSong.value.duration * progress
       if (!playing.value) {
         store.commit('setPlayingState', true)
       }
@@ -261,7 +278,11 @@ export default {
       changeMode,
       // use-favorite
       getFavoriteIcon,
-      toggleFavorite
+      toggleFavorite,
+      // use-cd
+      cdCls,
+      cdRef,
+      cdImageRef
     }
   }
 }
