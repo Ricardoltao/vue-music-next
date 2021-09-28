@@ -13,6 +13,19 @@
           <h2 class="subtitle">{{ currentSong.singer }}</h2>
         </div>
         <div class="bottom">
+          <div class="progress-wrapper">
+            <span class="time time-l">{{ formateTime(currentTime) }}</span>
+            <div class="progress-bar-wrapper">
+              <progress-bar
+                :progress="progress"
+                @progress-changing="onProgressChanging"
+                @progress-changed="onProgressChanged"
+              ></progress-bar>
+            </div>
+            <span class="time time-r">{{
+              formateTime(currentSong.duration)
+            }}</span>
+          </div>
           <div class="operators">
             <div class="icon i-left">
               <i @click="changeMode" :class="modeIcon"></i>
@@ -27,13 +40,23 @@
               <i class="icon-next" @click="next"></i>
             </div>
             <div class="icon i-right">
-              <i :class="getFavoriteIcon(currentSong)" @click="toggleFavorite(currentSong)"></i>
+              <i
+                :class="getFavoriteIcon(currentSong)"
+                @click="toggleFavorite(currentSong)"
+              ></i>
             </div>
           </div>
         </div>
       </template>
     </div>
-    <audio ref="audioRef" @pause="pause" @canplay="ready" @error="error"></audio>
+    <audio
+      ref="audioRef"
+      @pause="pause"
+      @canplay="ready"
+      @error="error"
+      @timeupdate="updateTime"
+      @ended="end"
+    ></audio>
   </div>
 </template>
 
@@ -42,13 +65,21 @@ import { computed, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import useMode from './use-mode'
 import useFavorite from './use-favorite'
+import ProgressBar from './progress-bar.vue'
+import { formateTime } from '@/assets/js/util'
+import { PLAY_MODE } from '@/assets/js/constant'
 
 export default {
   name: 'player',
+  components: {
+    ProgressBar
+  },
   setup() {
     // data
     const audioRef = ref(null)
     const songReady = ref(false)
+    const currentTime = ref(0)
+    let progressChanging = false
 
     // vuex
     const store = useStore()
@@ -57,6 +88,7 @@ export default {
     const playing = computed(() => store.state.playing)
     const currentIndex = computed(() => store.state.currentIndex)
     const playList = computed(() => store.state.playList)
+    const playMode = computed(() => store.state.playMode)
 
     // hooks
     const { modeIcon, changeMode } = useMode()
@@ -69,12 +101,16 @@ export default {
     const disableCls = computed(() => {
       return songReady.value ? '' : 'disable'
     })
+    const progress = computed(() => {
+      return currentTime.value / currentSong.value.duration
+    })
 
     // watch
     watch(currentSong, (newSong) => {
       if (!newSong.id || !newSong.url) {
         return
       }
+      currentTime.value = 0
       songReady.value = false
       const audioEl = audioRef.value
       audioEl.src = newSong.url
@@ -154,6 +190,7 @@ export default {
       const audioEl = audioRef.value
       audioEl.currentTime = 0
       audioEl.play()
+      store.commit('setPlayingState', true)
     }
 
     // 可播放时，解决DOM异常报错
@@ -168,12 +205,45 @@ export default {
       songReady.value = true
     }
 
+    // 播放到最后时，处理逻辑
+    function end() {
+      currentTime.value = 0
+      if (playMode.value === PLAY_MODE.loop) {
+        loop()
+      } else {
+        next()
+      }
+    }
+
+    function updateTime(e) {
+      // 当拖动进度条时不会更改 currentTime
+      if (!progressChanging) {
+        currentTime.value = e.target.currentTime
+      }
+    }
+
+    function onProgressChanging(progress) {
+      progressChanging = true
+      currentTime.value = currentSong.value.duration * progress
+    }
+
+    function onProgressChanged(progress) {
+      progressChanging = false
+      progressChanging = false
+      audioRef.value.currentTime = currentTime.value = currentSong.value.duration * progress
+      if (!playing.value) {
+        store.commit('setPlayingState', true)
+      }
+    }
+
     return {
       audioRef,
       fullScreen,
+      currentTime,
       currentSong,
       playIcon,
       disableCls,
+      progress,
       goBack,
       togglePlay,
       pause,
@@ -181,6 +251,11 @@ export default {
       next,
       ready,
       error,
+      end,
+      updateTime,
+      formateTime,
+      onProgressChanging,
+      onProgressChanged,
       // use-mode
       modeIcon,
       changeMode,
